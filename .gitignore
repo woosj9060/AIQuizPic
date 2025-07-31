@@ -1,0 +1,36 @@
+# 🔒 환경 변수 파일
+.env
+.env.*  
+*.env.local
+
+# ⚙️ 시스템/IDE 관련
+.DS_Store
+.vscode/
+.idea/
+
+# 🏗️ 빌드 아티팩트
+/build/
+dist/
+*.log
+
+# 📦 의존성 디렉터리
+node_modules/
+frontend/node_modules/
+backend/build/
+backend/out/
+
+# 🚀 배포 시 생성된 파일
+*.zip
+*.tar
+*.tar.gz
+
+# 🧪 테스트/coverage
+coverage/
+*.lcov
+
+# 🔍 기타 캐시
+*.swp
+*.tmp
+*.cache/
+turbo/
+.next/

@@ -1,0 +1,38 @@
+# ⛔ Node 및 프론트엔드 의존성
+node_modules
+frontend/node_modules
+
+# ⛔ 백엔드 빌드 결과물
+backend/build
+backend/out
+
+# ⛔ 프론트엔드 빌드 결과물
+dist
+frontend/dist
+
+# ⛔ 환경 변수
+.env
+*.env*
+!*.env.example
+*.dev
+
+# ⛔ 테스트 및 커버리지
+coverage
+*.log
+*.lcov
+
+# ⛔ 시스템 및 IDE 관련
+.DS_Store
+.vscode
+.idea
+
+# ⛔ Git 정보
+.git
+.gitignore
+
+# ⛔ 캐시 및 임시파일
+*.tmp
+*.swp
+.cache
+turbo
+.next

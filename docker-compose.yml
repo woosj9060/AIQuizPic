@@ -1,0 +1,62 @@
+
+services:
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./backend/images:/app/images
+    env_file:
+      - .env
+    networks:
+      - app-network
+    depends_on:
+      mysql:
+        condition: service_healthy  # healthcheck 완료 후 시작
+
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "5173:80" # 개발 중이라면 3000이나 80 사용
+    networks:
+      - app-network
+    depends_on:
+      - backend
+
+  mysql:
+    image: mysql:8.0
+    container_name: ai_quizpic
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
+      MYSQL_DATABASE: ai_quizpic
+      MYSQL_USER: "${MYSQL_USER}"
+      MYSQL_PASSWORD: "${MYSQL_PASSWORD}"
+      LANG: C.UTF-8
+      TZ: Asia/Seoul
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./my.cnf:/etc/my.cnf
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - app-network
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_general_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+
+    
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  app-network:
