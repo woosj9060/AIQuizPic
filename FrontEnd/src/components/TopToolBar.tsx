@@ -3,27 +3,25 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   Sheet,
   Box,
-  Button,
   Typography,
   Avatar,
-  Dropdown,
-  MenuButton,
-  Menu,
-  MenuItem,
-  Chip,
-  Tooltip
+  Tooltip,
+  IconButton,
+  Stack,
+  Divider,
 } from '@mui/joy';
 import {
-  Quiz,
   Login,
   PersonAdd,
   Logout,
   Person,
-  WarningRounded
+  WarningRounded,
+  Leaderboard,
+  Add,
 } from '@mui/icons-material';
 
 import { checkUnvalidatedQuizzesExist } from '../api/quiz';
-import { useQuizNotifications } from '../context/QuizNotificationContext'; // ❗ Context 훅 임포트
+import { useQuizNotifications } from '../context/QuizNotificationContext';
 
 interface TopToolbarProps {}
 
@@ -33,32 +31,26 @@ const TopToolbar: React.FC<TopToolbarProps> = () => {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [hasUnvalidatedQuizzes, setHasUnvalidatedQuizzes] = useState<boolean>(false);
 
-  // ❗ Context에서 refreshNotifications Ref를 가져옵니다.
   const { refreshNotifications: contextRefreshNotificationsRef } = useQuizNotifications();
 
-  // 미승인 퀴즈 존재 여부를 확인하고 상태를 업데이트하는 함수
   const updateUnvalidatedQuizStatus = useCallback(async () => {
     try {
       const exists = await checkUnvalidatedQuizzesExist();
       setHasUnvalidatedQuizzes(exists);
     } catch (error) {
       console.error('미승인 퀴즈 상태 확인 실패:', error);
-      // API 호출 실패 시 알림을 숨기거나 에러 처리
       setHasUnvalidatedQuizzes(false);
     }
-  }, []); // 의존성이 없으므로 컴포넌트 마운트 시 한 번만 생성됩니다.
+  }, []);
 
-  // 컴포넌트 초기 로드 시 및 로그인 상태 변경 시 사용자 정보 및 알림 상태 확인
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
       fetchUsername(token);
     }
-    updateUnvalidatedQuizStatus(); // 초기 로드 시 알림 상태도 확인
-  }, [isLoggedIn, updateUnvalidatedQuizStatus]); // isLoggedIn 변경 시 재실행
+    updateUnvalidatedQuizStatus();
+  }, [isLoggedIn, updateUnvalidatedQuizStatus]);
 
-  // ❗ Context의 refreshNotifications Ref에 실제 함수를 할당합니다.
-  // 이 useEffect는 컴포넌트 마운트 시 한 번만 실행됩니다.
   useEffect(() => {
     contextRefreshNotificationsRef.current = updateUnvalidatedQuizStatus;
   }, [updateUnvalidatedQuizStatus, contextRefreshNotificationsRef]);
@@ -95,7 +87,6 @@ const TopToolbar: React.FC<TopToolbarProps> = () => {
     localStorage.removeItem('token');
     setUsername(null);
     setIsLoggedIn(false);
-    // 로그아웃 후 알림 상태도 재확인
     updateUnvalidatedQuizStatus();
     navigate('/');
   };
@@ -110,17 +101,15 @@ const TopToolbar: React.FC<TopToolbarProps> = () => {
 
   return (
     <Sheet
-      variant="outlined"
+      component="header"
+      variant="soft"
+      color="primary"
       sx={{
         position: 'sticky',
         top: 0,
         zIndex: 1100,
-        borderRadius: 0,
-        borderTop: 'none',
-        borderLeft: 'none',
-        borderRight: 'none',
-        py: 1.5,
-        px: 2
+        py: 1,
+        px: 0,
       }}
     >
       <Box
@@ -128,118 +117,109 @@ const TopToolbar: React.FC<TopToolbarProps> = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          maxWidth: 1200,
           mx: 'auto',
-          width: '100%'
+          width: '100%',
         }}
       >
         {/* 좌측 로고 영역 */}
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <Link to={`/`}>
+          <Link to="/">
             <img src="/logo.png" alt="AIQuizpic Logo" style={{ width: '150px' }} />
           </Link>
         </Box>
 
         {/* 우측 버튼 영역 */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Stack direction="row" spacing={1.5} alignItems="center">
           {isLoggedIn ? (
             <>
               {/* 미승인 퀴즈 알림 아이콘 */}
               {hasUnvalidatedQuizzes && (
-                <Tooltip title="미승인 퀴즈가 있습니다! 클릭하여 확인" variant="soft" color="warning">
-                  <Button
-                    variant="plain" 
-                    color="danger" // Danger 색상으로 설정하여 경고 효과 유지
+                <Tooltip title="미승인 퀴즈가 있어요!" variant="solid" color="danger">
+                  <IconButton
+                    variant="plain"
+                    color="danger"
                     onClick={handleUnvalidatedQuizClick}
-                    sx={{
-                      minWidth: 0, 
-                      padding: 0,  
-                      '&:hover': {
-                        backgroundColor: 'background.level1',
-                      }
-                    }}
+                    size="sm"
                   >
-                    <WarningRounded sx={{ color: 'error.500', fontSize: 'xl' }} />
-                  </Button>
+                    <WarningRounded />
+                  </IconButton>
                 </Tooltip>
               )}
-              
-              <Button
-                variant="outlined"
-                startDecorator={<Quiz />}
-                onClick={() => handleNavigation('/CreateQuiz')}
-                size="sm"
-              >
-                퀴즈 만들기
-              </Button>
-              <Button
-                variant="plain"
-                color="primary"
-                size="sm"
-                onClick={() => navigate('/QuizStatsPage')}
-                sx={{
-                  ml: 1,
-                  fontWeight: 'md',
-                  textTransform: 'none',
-                  '&:hover': {
-                    backgroundColor: 'background.level1',
-                  },
-                }}
-              >
-                랭킹 보기
-              </Button>
-              {/* 사용자 정보 및 드롭다운 메뉴 */}
-              <Dropdown>
-                <MenuButton
-                  slots={{ root: Chip }}
-                  slotProps={{
-                    root: {
-                      variant: 'outlined',
-                      color: 'primary'
-                    }
-                  }}
+
+              {/* 퀴즈 만들기 버튼 */}
+              <Tooltip title="퀴즈 만들기" variant="solid">
+                <IconButton
+                  variant="plain"
+                  color="neutral"
+                  onClick={() => handleNavigation('/CreateQuiz')}
+                  size="sm"
                 >
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Avatar size="sm">
-                      <Person />
-                    </Avatar>
-                    <Typography level="body-sm">
-                      {username || '사용자'}
-                    </Typography>
-                  </Box>
-                </MenuButton>
-                <Menu placement="bottom-end" size="sm" >
-                  <MenuItem onClick={handleLogout} >
-                    <Logout sx={{ mr: 1 }} />
-                    로그아웃
-                  </MenuItem>
-                </Menu>
-              </Dropdown>
+                  <Add />
+                </IconButton>
+              </Tooltip>
+
+              {/* 랭킹 보기 버튼 */}
+              <Tooltip title="랭킹 보기" variant="solid">
+                <IconButton
+                  variant="plain"
+                  color="neutral"
+                  onClick={() => navigate('/QuizStatsPage')}
+                  size="sm"
+                >
+                  <Leaderboard />
+                </IconButton>
+              </Tooltip>
+
+              <Divider orientation="vertical" />
+              
+              {/* 사용자 정보 및 로그아웃 */}
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Avatar size="sm">
+                  <Person />
+                </Avatar>
+                <Typography level="body-sm" fontWeight="lg" sx={{ display: { xs: 'none', md: 'block' } }}>
+                  {username || '사용자'}
+                </Typography>
+                <Tooltip title="로그아웃" variant="solid">
+                  <IconButton
+                    variant="plain"
+                    color="neutral"
+                    onClick={handleLogout}
+                    size="sm"
+                  >
+                    <Logout />
+                  </IconButton>
+                </Tooltip>
+              </Stack>
             </>
           ) : (
             <>
               {/* 로그인되지 않은 상태 */}
-              <Button
-                variant="outlined"
-                startDecorator={<PersonAdd />}
-                onClick={() => handleNavigation('/Signup')}
-                size="sm"
-                color="neutral"
-              >
-                회원가입
-              </Button>
+              <Tooltip title="회원가입" variant="solid">
+                <IconButton
+                  variant="solid"
+                  color="neutral"
+                  onClick={() => handleNavigation('/Signup')}
+                  size="sm"
+                >
+                  <PersonAdd />
+                </IconButton>
+              </Tooltip>
 
-              <Button
-                variant="solid"
-                startDecorator={<Login />}
-                onClick={() => handleNavigation('/Login')}
-                size="sm"
-                color="primary"
-              >
-                로그인
-              </Button>
+              <Tooltip title="로그인" variant="solid">
+                <IconButton
+                  variant="solid"
+                  color="primary"
+                  onClick={() => handleNavigation('/Login')}
+                  size="sm"
+                >
+                  <Login />
+                </IconButton>
+              </Tooltip>
             </>
           )}
-        </Box>
+        </Stack>
       </Box>
     </Sheet>
   );
